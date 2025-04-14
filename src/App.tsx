@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,7 +6,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateListing from "./pages/CreateListing";
+import ListingDetails from "./pages/ListingDetails";
 import NotFound from "./pages/NotFound";
+import Messages from "./pages/Messages";
 import { useAuth } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,15 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/messages" 
+        element={
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="/listing/:id" element={<ListingDetails />} />
       <Route path="/" element={<Index />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

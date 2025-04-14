@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,9 +32,9 @@ import ImageUpload from "@/components/ImageUpload";
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  condition: z.string(),
-  category: z.string(),
-  location: z.string(),
+  condition: z.string().min(1, 'Please select a condition'),
+  category: z.string().min(1, 'Please select a category'),
+  location: z.string().min(1, 'Please select a location'),
   issues: z.string().min(10, 'Please describe any issues with the item'),
 });
 
@@ -42,8 +42,8 @@ const CreateListing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [images, setImages] = React.useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,13 +62,22 @@ const CreateListing = () => {
     setIsSubmitting(true);
 
     try {
+      // Insert listing with all required fields
+      const listingData = {
+        title: values.title,
+        description: values.description,
+        condition: values.condition,
+        category: values.category,
+        location: values.location,
+        issues: values.issues,
+        user_id: user.id,
+        status: 'available' as const
+      };
+
       // Insert listing
       const { data: listing, error: listingError } = await supabase
         .from('listings')
-        .insert({
-          ...values,
-          user_id: user.id,
-        })
+        .insert(listingData)
         .select()
         .single();
 
@@ -105,6 +114,7 @@ const CreateListing = () => {
 
       navigate(`/listing/${listing.id}`);
     } catch (error) {
+      console.error('Error creating listing:', error);
       toast({
         title: "Error",
         description: "Failed to create listing. Please try again.",
