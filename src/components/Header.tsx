@@ -20,8 +20,8 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <CircuitBoard className="h-6 w-6 text-tech-primary" />
-          <span className="font-bold text-xl hidden sm:inline">Harlem4Tech</span>
-          <span className="font-bold text-xl sm:hidden">H4T</span>
+          <span className="font-bold text-xl hidden sm:inline">Harlem4Home</span>
+          <span className="font-bold text-xl sm:hidden">H4H</span>
           <div className="hidden md:block">
             <span className="ml-2 text-xs bg-tech-secondary text-white px-2 py-0.5 rounded-full">BETA</span>
           </div>
@@ -44,10 +44,16 @@ const Header = () => {
           
           {user ? (
             <>
-              <Button variant="default" className="bg-tech-primary hover:bg-tech-secondary">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                <span className="hidden sm:block">Post Item</span>
-                <span className="sm:hidden">Post</span>
+              <Button 
+                variant="default" 
+                className="bg-tech-primary hover:bg-tech-secondary"
+                asChild
+              >
+                <Link to="/create-listing">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:block">Post Item</span>
+                  <span className="sm:hidden">Post</span>
+                </Link>
               </Button>
               
               <DropdownMenu>
@@ -91,6 +97,11 @@ const Header = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/">About</Link>
                 </DropdownMenuItem>
+                {user && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/create-listing">Post Item</Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

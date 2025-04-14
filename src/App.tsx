@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import CreateListing from "./pages/CreateListing";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -31,6 +32,14 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" replace />} />
+      <Route 
+        path="/create-listing" 
+        element={
+          <ProtectedRoute>
+            <CreateListing />
+          </ProtectedRoute>
+        } 
+      />
       <Route path="/" element={<Index />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
