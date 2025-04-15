@@ -50,7 +50,7 @@ const ListingGrid = () => {
             storage_path,
             order_index
           ),
-          profiles:user_id (
+          profiles (
             full_name,
             avatar_url
           )
@@ -94,7 +94,7 @@ const ListingGrid = () => {
       return data?.map(item => {
         const imagePath = item.listing_images?.[0]?.storage_path;
         const imageUrl = imagePath 
-          ? `${window.location.origin}/storage/v1/object/public/listing-images/${imagePath}`
+          ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/listing-images/${imagePath}`
           : '/placeholder.svg';
           
         return {

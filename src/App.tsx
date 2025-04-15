@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -63,14 +63,23 @@ const AppRoutes = () => {
   );
 };
 
+// Create a wrapper component that provides the AuthContext
+const AuthProviderWithRouter = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <AuthProvider>
+      <AuthProviderWithRouter>
         <Toaster />
         <Sonner />
         <AppRoutes />
-      </AuthProvider>
+      </AuthProviderWithRouter>
     </BrowserRouter>
   </QueryClientProvider>
 );
