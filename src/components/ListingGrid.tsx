@@ -49,10 +49,6 @@ const ListingGrid = () => {
           listing_images (
             storage_path,
             order_index
-          ),
-          profiles (
-            full_name,
-            avatar_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -86,17 +82,44 @@ const ListingGrid = () => {
         query = query.gte('created_at', dateFilter.toISOString());
       }
 
-      const { data, error } = await query;
+      const { data: listingsData, error: listingsError } = await query;
       
-      if (error) throw error;
+      if (listingsError) throw listingsError;
+      
+      // Get unique user IDs from listings
+      const userIds = listingsData?.map(item => item.user_id) || [];
+      const uniqueUserIds = [...new Set(userIds)];
+      
+      // Fetch profiles for these users
+      let profiles: Record<string, { full_name?: string, avatar_url?: string }> = {};
+      
+      if (uniqueUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', uniqueUserIds);
+          
+        // Create a lookup object for easy access
+        if (profilesData) {
+          profiles = profilesData.reduce((acc, profile) => {
+            acc[profile.id] = {
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+            };
+            return acc;
+          }, {} as Record<string, { full_name?: string, avatar_url?: string }>);
+        }
+      }
       
       // Transform the data to match the Listing interface
-      return data?.map(item => {
+      return listingsData?.map(item => {
         const imagePath = item.listing_images?.[0]?.storage_path;
         const imageUrl = imagePath 
           ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/listing-images/${imagePath}`
           : '/placeholder.svg';
           
+        const userProfile = profiles[item.user_id] || {};
+        
         return {
           id: item.id,
           title: item.title,
@@ -107,8 +130,8 @@ const ListingGrid = () => {
           location: item.location,
           postedAt: formatDistanceToNow(new Date(item.created_at), { addSuffix: true }),
           user: {
-            name: item.profiles?.full_name || 'Anonymous User',
-            avatar: item.profiles?.avatar_url,
+            name: userProfile.full_name || 'Anonymous User',
+            avatar: userProfile.avatar_url,
           },
           isNew: new Date(item.created_at) > new Date(Date.now() - 86400000), // 24 hours
           isFeatured: item.status === 'featured',
