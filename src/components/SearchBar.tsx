@@ -14,12 +14,27 @@ const SearchBar = () => {
   const [location, setLocation] = useState('all');
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (search) params.append('q', search);
-    if (category !== 'all') params.append('category', category);
-    if (location !== 'all') params.append('location', location);
+    const searchParams = new URLSearchParams(window.location.search);
     
-    navigate(`/categories?${params.toString()}`);
+    if (search) searchParams.set('q', search);
+    else searchParams.delete('q');
+    
+    if (category !== 'all') searchParams.set('category', category);
+    else searchParams.delete('category');
+    
+    if (location !== 'all') searchParams.set('location', location);
+    else searchParams.delete('location');
+    
+    const queryString = searchParams.toString();
+    navigate(queryString ? `/?${queryString}` : '/');
+
+    // Scroll to listings section if we're on the homepage
+    if (window.location.pathname === '/') {
+      const listingsSection = document.getElementById('listings-section');
+      if (listingsSection) {
+        listingsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (

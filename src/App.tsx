@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,7 +9,6 @@ import CreateListing from "./pages/CreateListing";
 import ListingDetails from "./pages/ListingDetails";
 import NotFound from "./pages/NotFound";
 import Messages from "./pages/Messages";
-import Categories from "./pages/Categories";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import About from "./pages/About";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,7 +35,6 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" replace />} />
-      <Route path="/categories" element={<Categories />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/about" element={<About />} />
       <Route 
@@ -63,7 +60,6 @@ const AppRoutes = () => {
   );
 };
 
-// Create a wrapper component that provides the AuthContext
 const AuthProviderWithRouter = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthProvider>

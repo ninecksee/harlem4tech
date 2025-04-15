@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CircuitBoard, Menu, PlusCircle, Search, User, LogOut } from "lucide-react";
 import {
@@ -7,8 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import SearchBar from "./SearchBar";
 
 const Header = () => {
   const isMobile = useIsMobile();
@@ -29,17 +35,24 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center space-x-4 text-sm font-medium">
             <Link to="/" className="text-foreground/60 hover:text-foreground">Browse</Link>
-            <Link to="/categories" className="text-foreground/60 hover:text-foreground">Categories</Link>
+            <a href="/#categories" className="text-foreground/60 hover:text-foreground">Categories</a>
             <Link to="/how-it-works" className="text-foreground/60 hover:text-foreground">How It Works</Link>
             <Link to="/about" className="text-foreground/60 hover:text-foreground">About</Link>
           </nav>
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-foreground/60">
-            <Search className="h-5 w-5" />
-            <span className="sr-only">Search</span>
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-foreground/60">
+                <Search className="h-5 w-5" />
+                <span className="sr-only">Search</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <SearchBar />
+            </DialogContent>
+          </Dialog>
           
           {user ? (
             <>
