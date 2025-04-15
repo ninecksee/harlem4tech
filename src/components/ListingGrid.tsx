@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,8 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { categories, conditions, neighborhoods } from "@/data/mockData";
+import { categories, conditions, neighborhoods, Listing } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface Filters {
   condition: string[];
@@ -47,6 +49,10 @@ const ListingGrid = () => {
           listing_images (
             storage_path,
             order_index
+          ),
+          profiles:user_id (
+            full_name,
+            avatar_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -83,7 +89,31 @@ const ListingGrid = () => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match the Listing interface
+      return data?.map(item => {
+        const imagePath = item.listing_images?.[0]?.storage_path;
+        const imageUrl = imagePath 
+          ? `${window.location.origin}/storage/v1/object/public/listing-images/${imagePath}`
+          : '/placeholder.svg';
+          
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          image: imageUrl,
+          condition: item.condition,
+          category: item.category,
+          location: item.location,
+          postedAt: formatDistanceToNow(new Date(item.created_at), { addSuffix: true }),
+          user: {
+            name: item.profiles?.full_name || 'Anonymous User',
+            avatar: item.profiles?.avatar_url,
+          },
+          isNew: new Date(item.created_at) > new Date(Date.now() - 86400000), // 24 hours
+          isFeatured: item.status === 'featured',
+        } as Listing;
+      }) || [];
     }
   });
 
@@ -115,7 +145,11 @@ const ListingGrid = () => {
         <div className="space-y-2">
           {conditions.map((condition) => (
             <div key={condition} className="flex items-center space-x-2">
-              <Checkbox id={`condition-${condition}`} />
+              <Checkbox 
+                id={`condition-${condition}`}
+                checked={filters.condition.includes(condition)}
+                onCheckedChange={() => handleFilterChange('condition', condition)}
+              />
               <Label htmlFor={`condition-${condition}`} className="text-sm">
                 {condition}
               </Label>
@@ -131,7 +165,11 @@ const ListingGrid = () => {
         <div className="space-y-2">
           {categories.map((category) => (
             <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox id={`category-${category.id}`} />
+              <Checkbox 
+                id={`category-${category.id}`}
+                checked={filters.category.includes(category.id)}
+                onCheckedChange={() => handleFilterChange('category', category.id)}
+              />
               <Label htmlFor={`category-${category.id}`} className="text-sm">
                 {category.icon} {category.name}
               </Label>
@@ -144,7 +182,7 @@ const ListingGrid = () => {
       
       <div>
         <h4 className="mb-2 text-sm font-medium">Location</h4>
-        <RadioGroup defaultValue="all">
+        <RadioGroup value={filters.location} onValueChange={(value) => handleFilterChange('location', value)}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="all" id="location-all" />
             <Label htmlFor="location-all" className="text-sm">All Locations</Label>
@@ -162,7 +200,7 @@ const ListingGrid = () => {
       
       <div>
         <h4 className="mb-2 text-sm font-medium">Listing Age</h4>
-        <RadioGroup defaultValue="all">
+        <RadioGroup value={filters.listingAge} onValueChange={(value) => handleFilterChange('listingAge', value)}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="all" id="age-all" />
             <Label htmlFor="age-all" className="text-sm">Any time</Label>
@@ -183,8 +221,18 @@ const ListingGrid = () => {
       </div>
       
       <div className="pt-4 flex gap-2">
-        <Button className="flex-1" variant="default">Apply Filters</Button>
-        <Button className="flex-1" variant="outline">Reset</Button>
+        <Button 
+          className="flex-1" 
+          variant="default"
+          onClick={() => setFilters({
+            condition: [],
+            category: [],
+            location: 'all',
+            listingAge: 'all'
+          })}
+        >
+          Reset Filters
+        </Button>
       </div>
     </div>
   );
@@ -246,15 +294,7 @@ const ListingGrid = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {listings?.map((listing) => (
-                  <ListingCard 
-                    key={listing.id} 
-                    listing={{
-                      ...listing,
-                      image: listing.listing_images?.[0]
-                        ? `${window.location.origin}/storage/v1/object/public/listing-images/${listing.listing_images[0].storage_path}`
-                        : '/placeholder.svg'
-                    }} 
-                  />
+                  <ListingCard key={listing.id} listing={listing} />
                 ))}
               </div>
             )}
@@ -270,15 +310,7 @@ const ListingGrid = () => {
             ))
           ) : (
             listings?.map((listing) => (
-              <ListingCard 
-                key={listing.id} 
-                listing={{
-                  ...listing,
-                  image: listing.listing_images?.[0]
-                    ? `${window.location.origin}/storage/v1/object/public/listing-images/${listing.listing_images[0].storage_path}`
-                    : '/placeholder.svg'
-                }} 
-              />
+              <ListingCard key={listing.id} listing={listing} />
             ))
           )}
         </div>
