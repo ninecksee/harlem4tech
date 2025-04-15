@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import CategorySection from "@/components/CategorySection";
@@ -9,9 +8,21 @@ import Footer from "@/components/Footer";
 import { CircuitBoard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handlePostItem = () => {
+    if (!user) {
+      navigate('/auth');
+    } else {
+      navigate('/create-listing');
+    }
+  };
   
   return (
     <div className="flex min-h-screen flex-col">
@@ -39,10 +50,17 @@ const Index = () => {
               </p>
               
               <div className="flex flex-wrap gap-4">
-                <Button className="bg-tech-primary hover:bg-tech-secondary">
+                <Button 
+                  className="bg-tech-primary hover:bg-tech-secondary"
+                  onClick={handlePostItem}
+                >
                   Post an Item
                 </Button>
-                <Button variant="outline" className="bg-transparent border-tech-light/30 hover:bg-tech-dark/50">
+                <Button 
+                  variant="outline" 
+                  className="bg-transparent border-tech-light/30 hover:bg-tech-dark/50"
+                  onClick={() => navigate('/categories')}
+                >
                   Browse Items
                 </Button>
               </div>
@@ -113,10 +131,19 @@ const Index = () => {
               Your unused tech could be someone else's treasure. Get started today and make a difference in your community.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="bg-white text-tech-primary hover:bg-gray-100">
+              <Button 
+                size="lg" 
+                className="bg-white text-tech-primary hover:bg-gray-100"
+                onClick={handlePostItem}
+              >
                 Post Your First Item
               </Button>
-              <Button size="lg" variant="outline" className="bg-transparent border-white hover:bg-tech-primary/80">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="bg-transparent border-white hover:bg-tech-primary/80"
+                onClick={() => navigate('/how-it-works')}
+              >
                 Learn More
               </Button>
             </div>

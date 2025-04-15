@@ -4,8 +4,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { categories, neighborhoods } from "@/data/mockData";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const SearchBar = () => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [location, setLocation] = useState('all');
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (search) params.append('q', search);
+    if (category !== 'all') params.append('category', category);
+    if (location !== 'all') params.append('location', location);
+    
+    navigate(`/categories?${params.toString()}`);
+  };
+
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border p-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -15,12 +31,15 @@ const SearchBar = () => {
             <Input 
               placeholder="Search tech items..." 
               className="pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
         </div>
         
         <div>
-          <Select>
+          <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -36,7 +55,7 @@ const SearchBar = () => {
         </div>
         
         <div>
-          <Select>
+          <Select value={location} onValueChange={setLocation}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
@@ -52,7 +71,10 @@ const SearchBar = () => {
         </div>
         
         <div className="md:col-span-4">
-          <Button className="w-full bg-tech-primary hover:bg-tech-secondary">
+          <Button 
+            onClick={handleSearch}
+            className="w-full bg-tech-primary hover:bg-tech-secondary"
+          >
             <Search className="mr-2 h-4 w-4" />
             Find Tech Treasures
           </Button>

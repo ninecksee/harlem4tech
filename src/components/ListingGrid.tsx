@@ -1,6 +1,6 @@
-
 import { useState } from "react";
-import { Listing, listings } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import ListingCard from "./ListingCard";
 import { Button } from "@/components/ui/button";
 import { Filter, SlidersHorizontal } from "lucide-react";
@@ -18,85 +18,97 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { categories, conditions, neighborhoods } from "@/data/mockData";
+import { useToast } from "@/hooks/use-toast";
+
+interface Filters {
+  condition: string[];
+  category: string[];
+  location: string;
+  listingAge: string;
+}
 
 const ListingGrid = () => {
-  const [filteredListings, setFilteredListings] = useState<Listing[]>(listings);
   const isMobile = useIsMobile();
-  
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Available Tech Treasures</h2>
-        
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
-            {filteredListings.length} items
-          </div>
-          
-          {isMobile ? (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filters</SheetTitle>
-                  <SheetDescription>
-                    Narrow down your tech treasure hunt
-                  </SheetDescription>
-                </SheetHeader>
-                <Separator className="my-4" />
-                <FilterOptions />
-              </SheetContent>
-            </Sheet>
-          ) : (
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Sort by: Latest
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {!isMobile && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border p-4 sticky top-20">
-              <h3 className="font-semibold mb-4">Filters</h3>
-              <FilterOptions />
-            </div>
-          </div>
-          
-          <div className="lg:col-span-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {isMobile && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {filteredListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-      )}
-      
-      <div className="mt-8 flex justify-center">
-        <Button variant="outline" className="px-8">Load More</Button>
-      </div>
-    </div>
-  );
-};
+  const { toast } = useToast();
+  const [filters, setFilters] = useState<Filters>({
+    condition: [],
+    category: [],
+    location: 'all',
+    listingAge: 'all'
+  });
 
-const FilterOptions = () => {
-  return (
+  const { data: listings, isLoading, error } = useQuery({
+    queryKey: ['listings', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('listings')
+        .select(`
+          *,
+          listing_images (
+            storage_path,
+            order_index
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (filters.condition.length > 0) {
+        query = query.in('condition', filters.condition);
+      }
+      
+      if (filters.category.length > 0) {
+        query = query.in('category', filters.category);
+      }
+      
+      if (filters.location !== 'all') {
+        query = query.eq('location', filters.location);
+      }
+      
+      if (filters.listingAge !== 'all') {
+        const now = new Date();
+        let dateFilter = now;
+        switch (filters.listingAge) {
+          case 'today':
+            dateFilter = new Date(now.setDate(now.getDate() - 1));
+            break;
+          case 'week':
+            dateFilter = new Date(now.setDate(now.getDate() - 7));
+            break;
+          case 'month':
+            dateFilter = new Date(now.setMonth(now.getMonth() - 1));
+            break;
+        }
+        query = query.gte('created_at', dateFilter.toISOString());
+      }
+
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const handleFilterChange = (type: keyof Filters, value: any) => {
+    setFilters(prev => {
+      if (type === 'condition' || type === 'category') {
+        const array = prev[type] as string[];
+        const newArray = array.includes(value)
+          ? array.filter(item => item !== value)
+          : [...array, value];
+        return { ...prev, [type]: newArray };
+      }
+      return { ...prev, [type]: value };
+    });
+  };
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load listings. Please try again.",
+      variant: "destructive",
+    });
+  }
+
+  const FilterOptions = () => (
     <div className="space-y-6">
       <div>
         <h4 className="mb-2 text-sm font-medium">Condition</h4>
@@ -173,6 +185,107 @@ const FilterOptions = () => {
       <div className="pt-4 flex gap-2">
         <Button className="flex-1" variant="default">Apply Filters</Button>
         <Button className="flex-1" variant="outline">Reset</Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Available Tech Treasures</h2>
+        
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground">
+            {listings?.length || 0} items
+          </div>
+          
+          {isMobile ? (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                  <SheetDescription>
+                    Narrow down your tech treasure hunt
+                  </SheetDescription>
+                </SheetHeader>
+                <Separator className="my-4" />
+                <FilterOptions />
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Button variant="outline" size="sm">
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Sort by: Latest
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {!isMobile && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border p-4 sticky top-20">
+              <h3 className="font-semibold mb-4">Filters</h3>
+              <FilterOptions />
+            </div>
+          </div>
+          
+          <div className="lg:col-span-3">
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {listings?.map((listing) => (
+                  <ListingCard 
+                    key={listing.id} 
+                    listing={{
+                      ...listing,
+                      image: listing.listing_images?.[0]
+                        ? `${window.location.origin}/storage/v1/object/public/listing-images/${listing.listing_images[0].storage_path}`
+                        : '/placeholder.svg'
+                    }} 
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {isMobile && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {isLoading ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+            ))
+          ) : (
+            listings?.map((listing) => (
+              <ListingCard 
+                key={listing.id} 
+                listing={{
+                  ...listing,
+                  image: listing.listing_images?.[0]
+                    ? `${window.location.origin}/storage/v1/object/public/listing-images/${listing.listing_images[0].storage_path}`
+                    : '/placeholder.svg'
+                }} 
+              />
+            ))
+          )}
+        </div>
+      )}
+      
+      <div className="mt-8 flex justify-center">
+        <Button variant="outline" className="px-8">Load More</Button>
       </div>
     </div>
   );
