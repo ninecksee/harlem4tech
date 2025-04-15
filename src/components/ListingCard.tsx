@@ -1,4 +1,3 @@
-
 import { MapPin, Clock } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -6,13 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Listing } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import { Link, useNavigate } from "react-router-dom";
 
 interface ListingCardProps {
   listing: Listing;
 }
 
 const ListingCard = ({ listing }: ListingCardProps) => {
-  const { title, description, image, condition, location, postedAt, user, isNew, isFeatured } = listing;
+  const navigate = useNavigate();
+  const { id, title, description, image, condition, location, postedAt, user, isNew, isFeatured } = listing;
   
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -29,10 +30,13 @@ const ListingCard = ({ listing }: ListingCardProps) => {
   };
 
   return (
-    <Card className={cn(
-      "overflow-hidden transition-all duration-300 hover:shadow-md",
-      isFeatured ? "border-tech-accent border-2" : ""
-    )}>
+    <Card 
+      className={cn(
+        "overflow-hidden transition-all duration-300 hover:shadow-md cursor-pointer",
+        isFeatured ? "border-tech-accent border-2" : ""
+      )}
+      onClick={() => navigate(`/listing/${id}`)}
+    >
       <div className="relative">
         <div className="aspect-square overflow-hidden">
           <img 

@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CircuitBoard, Menu, PlusCircle, Search, User, LogOut } from "lucide-react";
@@ -30,9 +29,9 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center space-x-4 text-sm font-medium">
             <Link to="/" className="text-foreground/60 hover:text-foreground">Browse</Link>
-            <Link to="/" className="text-foreground/60 hover:text-foreground">Categories</Link>
-            <Link to="/" className="text-foreground/60 hover:text-foreground">How It Works</Link>
-            <Link to="/" className="text-foreground/60 hover:text-foreground">About</Link>
+            <Link to="/categories" className="text-foreground/60 hover:text-foreground">Categories</Link>
+            <Link to="/how-it-works" className="text-foreground/60 hover:text-foreground">How It Works</Link>
+            <Link to="/about" className="text-foreground/60 hover:text-foreground">About</Link>
           </nav>
         </div>
         
@@ -89,13 +88,13 @@ const Header = () => {
                   <Link to="/">Browse</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/">Categories</Link>
+                  <Link to="/categories">Categories</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/">How It Works</Link>
+                  <Link to="/how-it-works">How It Works</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/">About</Link>
+                  <Link to="/about">About</Link>
                 </DropdownMenuItem>
                 {user && (
                   <DropdownMenuItem asChild>

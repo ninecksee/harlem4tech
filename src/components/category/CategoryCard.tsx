@@ -10,7 +10,7 @@ interface CategoryCardProps {
 
 const CategoryCard = ({ category }: CategoryCardProps) => {
   return (
-    <Link to={`/category/${category.id}`}>
+    <Link to={`/categories#${category.id}`}>
       <Card className="hover:shadow-lg transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
