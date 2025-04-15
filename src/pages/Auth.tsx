@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ const Auth = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    username: "",
     fullName: "",
   });
   
@@ -28,7 +26,6 @@ const Auth = () => {
         await signIn(formData.email, formData.password);
       } else {
         await signUp(formData.email, formData.password, {
-          username: formData.username,
           full_name: formData.fullName,
         });
         toast({
@@ -79,20 +76,12 @@ const Auth = () => {
             />
 
             {!isLogin && (
-              <>
-                <Input
-                  placeholder="Username"
-                  required
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                />
-                <Input
-                  placeholder="Full Name"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                />
-              </>
+              <Input
+                placeholder="Full Name"
+                required
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              />
             )}
           </div>
 

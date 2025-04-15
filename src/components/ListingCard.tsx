@@ -1,3 +1,4 @@
+
 import { MapPin, Clock } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -14,6 +15,16 @@ interface ListingCardProps {
 const ListingCard = ({ listing }: ListingCardProps) => {
   const navigate = useNavigate();
   const { id, title, description, image, condition, location, postedAt, user, isNew, isFeatured } = listing;
+  
+  // Only show first name and last initial
+  const getUserDisplayName = (name: string) => {
+    const [firstName, ...lastName] = name.split(' ');
+    return lastName.length > 0 
+      ? `${firstName} ${lastName[lastName.length - 1][0]}.` 
+      : firstName;
+  };
+
+  const displayName = getUserDisplayName(user.name);
   
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -81,15 +92,19 @@ const ListingCard = ({ listing }: ListingCardProps) => {
         <div className="flex items-center">
           <Avatar className="h-6 w-6 mr-2">
             {user.avatar ? (
-              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarImage src={user.avatar} alt={displayName} />
             ) : (
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              <AvatarFallback>{displayName[0].toUpperCase()}</AvatarFallback>
             )}
           </Avatar>
-          <span className="text-xs">{user.name}</span>
+          <span className="text-xs">{displayName}</span>
         </div>
         
-        <Button size="sm" className="bg-tech-primary hover:bg-tech-secondary">
+        <Button 
+          size="sm" 
+          className="bg-tech-primary hover:bg-tech-secondary"
+          onClick={() => navigate(`/listing/${id}`)}
+        >
           Claim It
         </Button>
       </CardFooter>

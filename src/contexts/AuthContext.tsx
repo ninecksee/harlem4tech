@@ -8,7 +8,9 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata: any) => Promise<void>;
+  signUp: (email: string, password: string, metadata: { 
+    full_name: string 
+  }) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
 };
@@ -22,7 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -31,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -47,11 +47,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate("/");
   };
 
-  const signUp = async (email: string, password: string, metadata: any) => {
+  const signUp = async (email: string, password: string, metadata: { full_name: string }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata }
+      options: { 
+        data: { 
+          full_name: metadata.full_name,
+          first_name: metadata.full_name.split(' ')[0],
+          last_name: metadata.full_name.split(' ').slice(1).join(' ')
+        } 
+      }
     });
     if (error) throw error;
   };
