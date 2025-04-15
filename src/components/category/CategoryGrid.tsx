@@ -9,18 +9,30 @@ const CategoryGrid = () => {
   const { data: categoryCounts } = useQuery({
     queryKey: ['category-counts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, fetch all available listings
+      const { data: listings, error } = await supabase
         .from('listings')
-        .select('category, count(*)', { count: 'exact' })
-        .eq('status', 'available')
-        .group('category');
+        .select('category')
+        .eq('status', 'available');
       
       if (error) throw error;
       
-      const countMap = data?.reduce((acc, { category, count }) => {
-        acc[category] = Number(count);
-        return acc;
-      }, {} as Record<string, number>);
+      // Manually count categories from the result
+      const countMap: Record<string, number> = {};
+      
+      // Initialize all categories with 0 count
+      categories.forEach(category => {
+        countMap[category.id] = 0;
+      });
+      
+      // Count listings by category
+      if (listings && listings.length > 0) {
+        listings.forEach(listing => {
+          if (listing.category && countMap[listing.category] !== undefined) {
+            countMap[listing.category]++;
+          }
+        });
+      }
       
       return countMap;
     }
