@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -25,16 +26,16 @@ interface Listing {
   condition: string;
   category: string;
   location: string;
-  issues: string;
+  issues: string | null;
   user_id: string;
   created_at: string;
   status: string;
 }
 
 interface Profile {
-  full_name: string;
-  first_name: string;
-  last_name: string;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface ListingImage {
@@ -53,6 +54,8 @@ const ListingDetails = () => {
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
+      if (!id) throw new Error('No listing ID provided');
+      
       const { data, error } = await supabase
         .from('listings')
         .select(`
@@ -66,9 +69,20 @@ const ListingDetails = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
-      return data as unknown as Listing & { profiles: Profile };
+      if (error) {
+        console.error('Error fetching listing:', error);
+        throw error;
+      }
+      
+      // Handle case where profiles could be an error object
+      if (data && typeof data.profiles === 'object' && 'error' in data.profiles) {
+        // Create a compatible profile object with null values
+        data.profiles = { full_name: null, first_name: null, last_name: null };
+      }
+      
+      return data as Listing & { profiles: Profile };
     },
+    retry: 1,
   });
 
   useEffect(() => {
@@ -83,6 +97,11 @@ const ListingDetails = () => {
 
       if (imageError) {
         console.error('Error fetching images:', imageError);
+        return;
+      }
+
+      if (!imageRecords || imageRecords.length === 0) {
+        console.log('No images found for this listing');
         return;
       }
 
@@ -105,10 +124,13 @@ const ListingDetails = () => {
     fetchImages();
   }, [id]);
 
-  const getUserDisplayName = (profile: Profile) => {
-    const firstName = profile.first_name || profile.full_name.split(' ')[0];
-    const lastName = profile.last_name || profile.full_name.split(' ').slice(1).join(' ');
-    return `${firstName} ${lastName[0]}.`;
+  const getUserDisplayName = (profile: Profile | undefined) => {
+    if (!profile) return 'Unknown User';
+    
+    const firstName = profile.first_name || (profile.full_name ? profile.full_name.split(' ')[0] : 'Unknown');
+    const lastName = profile.last_name || (profile.full_name ? profile.full_name.split(' ').slice(1).join(' ') : '');
+    
+    return lastName ? `${firstName} ${lastName[0]}.` : firstName;
   };
 
   const handleSendMessage = async () => {
@@ -163,109 +185,103 @@ const ListingDetails = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : !listing ? (
-          <div>Listing not found</div>
-        ) : (
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              {selectedImage && (
-                <div className="aspect-square w-full overflow-hidden rounded-lg">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            {selectedImage && (
+              <div className="aspect-square w-full overflow-hidden rounded-lg">
+                <img 
+                  src={selectedImage} 
+                  alt={listing.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            <div className="grid grid-cols-4 gap-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(image)}
+                  className={`aspect-square overflow-hidden rounded-lg border-2 ${
+                    selectedImage === image ? 'border-primary' : 'border-transparent'
+                  }`}
+                >
                   <img 
-                    src={selectedImage} 
-                    alt={listing.title}
+                    src={image} 
+                    alt={`${listing.title} - ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
-                </div>
-              )}
-              
-              <div className="grid grid-cols-4 gap-2">
-                {images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(image)}
-                    className={`aspect-square overflow-hidden rounded-lg border-2 ${
-                      selectedImage === image ? 'border-primary' : 'border-transparent'
-                    }`}
-                  >
-                    <img 
-                      src={image} 
-                      alt={`${listing.title} - ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold">{listing.title}</h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <p className="text-muted-foreground">{listing.location}</p>
-                  <span className="text-muted-foreground">•</span>
-                  <p className="text-muted-foreground">Listed by {listing.profiles && getUserDisplayName(listing.profiles)}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Description</h2>
-                  <p className="mt-2">{listing.description}</p>
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-semibold">Condition</h2>
-                  <p className="mt-2">{listing.condition}</p>
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-semibold">Category</h2>
-                  <p className="mt-2">{listing.category}</p>
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-semibold">Known Issues</h2>
-                  <p className="mt-2">{listing.issues}</p>
-                </div>
-              </div>
-
-              {user && user.id !== listing.user_id && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Contact Owner
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Send a message about this item</DialogTitle>
-                      <DialogDescription>
-                        Your message will be sent to the owner of this item.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="message">Your message</Label>
-                        <Textarea
-                          id="message"
-                          placeholder="Hi! I'm interested in your item..."
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                        />
-                      </div>
-                      <Button onClick={handleSendMessage} className="w-full">
-                        Send Message
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold">{listing.title}</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-muted-foreground">{listing.location}</p>
+                <span className="text-muted-foreground">•</span>
+                <p className="text-muted-foreground">Listed by {getUserDisplayName(listing.profiles)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Description</h2>
+                <p className="mt-2">{listing.description}</p>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold">Condition</h2>
+                <p className="mt-2">{listing.condition}</p>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold">Category</h2>
+                <p className="mt-2">{listing.category}</p>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold">Known Issues</h2>
+                <p className="mt-2">{listing.issues || 'None reported'}</p>
+              </div>
+            </div>
+
+            {user && user.id !== listing.user_id && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Contact Owner
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Send a message about this item</DialogTitle>
+                    <DialogDescription>
+                      Your message will be sent to the owner of this item.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Your message</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Hi! I'm interested in your item..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                      />
+                    </div>
+                    <Button onClick={handleSendMessage} className="w-full">
+                      Send Message
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
