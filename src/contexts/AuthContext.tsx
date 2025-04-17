@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,14 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, metadata: { full_name: string }) => {
+    const names = metadata.full_name.split(' ');
+    const firstName = names[0];
+    const lastName = names.slice(1).join(' ');
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { 
         data: { 
           full_name: metadata.full_name,
-          first_name: metadata.full_name.split(' ')[0],
-          last_name: metadata.full_name.split(' ').slice(1).join(' ')
+          first_name: firstName,
+          last_name: lastName
         } 
       }
     });

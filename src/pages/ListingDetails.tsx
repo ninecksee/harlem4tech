@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +7,16 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Listing {
   id: string;
@@ -22,9 +31,10 @@ interface Listing {
   status: string;
 }
 
-interface ListingImage {
-  storage_path: string;
-  order_index: number;
+interface Profile {
+  full_name: string;
+  first_name: string;
+  last_name: string;
 }
 
 const ListingDetails = () => {
@@ -33,18 +43,26 @@ const ListingDetails = () => {
   const { toast } = useToast();
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
-  const { data: listing, isLoading } = useQuery({
+  const { data: listing } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            first_name,
+            last_name
+          )
+        `)
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return data as Listing;
+      return data as Listing & { profiles: Profile };
     },
   });
 
@@ -82,8 +100,14 @@ const ListingDetails = () => {
     fetchImages();
   }, [id]);
 
-  const startChat = async () => {
-    if (!user || !listing) return;
+  const getUserDisplayName = (profile: Profile) => {
+    const firstName = profile.first_name || profile.full_name.split(' ')[0];
+    const lastName = profile.last_name || profile.full_name.split(' ').slice(1).join(' ');
+    return `${firstName} ${lastName[0]}.`;
+  };
+
+  const handleSendMessage = async () => {
+    if (!user || !listing || !message.trim()) return;
 
     try {
       const { error } = await supabase
@@ -92,7 +116,7 @@ const ListingDetails = () => {
           listing_id: listing.id,
           sender_id: user.id,
           recipient_id: listing.user_id,
-          content: `Hi! I'm interested in your ${listing.title}.`,
+          content: message,
         });
 
       if (error) throw error;
@@ -101,6 +125,8 @@ const ListingDetails = () => {
         title: "Message sent!",
         description: "The owner will be notified of your interest.",
       });
+      
+      setMessage('');
     } catch (error) {
       toast({
         title: "Error",
@@ -166,7 +192,11 @@ const ListingDetails = () => {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold">{listing.title}</h1>
-              <p className="text-muted-foreground mt-2">{listing.location}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-muted-foreground">{listing.location}</p>
+                <span className="text-muted-foreground">•</span>
+                <p className="text-muted-foreground">Listed by {listing.profiles && getUserDisplayName(listing.profiles)}</p>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -192,13 +222,36 @@ const ListingDetails = () => {
             </div>
 
             {user && user.id !== listing.user_id && (
-              <Button 
-                onClick={startChat}
-                className="w-full"
-              >
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Message Owner
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Contact Owner
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Send a message about this item</DialogTitle>
+                    <DialogDescription>
+                      Your message will be sent to the owner of this item.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Your message</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Hi! I'm interested in your item..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                      />
+                    </div>
+                    <Button onClick={handleSendMessage} className="w-full">
+                      Send Message
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>

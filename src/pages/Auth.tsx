@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CircuitBoard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/utils/supabase";
+import { createSampleListings } from '@/utils/createSampleListings';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,9 +27,22 @@ const Auth = () => {
       if (isLogin) {
         await signIn(formData.email, formData.password);
       } else {
-        await signUp(formData.email, formData.password, {
-          full_name: formData.fullName,
+        const { data: { user } } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              first_name: formData.fullName.split(' ')[0],
+              last_name: formData.fullName.split(' ').slice(1).join(' ')
+            }
+          }
         });
+
+        if (user) {
+          await createSampleListings(user.id);
+        }
+
         toast({
           title: "Account created!",
           description: "Please check your email to confirm your account.",
