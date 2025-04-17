@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CircuitBoard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/utils/supabase";
+import { supabase } from "@/integrations/supabase/client"; // Fixed import path
 import { createSampleListings } from '@/utils/createSampleListings';
 
 const Auth = () => {
