@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import ListingCard from "./ListingCard";
+import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Filter, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
@@ -15,19 +14,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { categories, conditions, neighborhoods, Listing } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-import ActiveFilters from "./filters/ActiveFilters";
+import FiltersSection from "./filters/FiltersSection";
+import ListingSorter from "./listing/ListingSorter";
+import ListingsContent from "./listing/ListingsContent";
+import RecentActivity from "./RecentActivity";
 
 interface Filters {
   condition: string[];
@@ -41,6 +33,7 @@ type SortOption = 'latest' | 'oldest' | 'alphabetical';
 const ListingGrid = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<Filters>({
     condition: [],
@@ -210,117 +203,14 @@ const ListingGrid = () => {
     navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
-  const getSortButtonText = () => {
-    switch (sortBy) {
-      case 'latest': return 'Latest';
-      case 'oldest': return 'Oldest';
-      case 'alphabetical': return 'A-Z';
-    }
+  const resetFilters = () => {
+    setFilters({
+      condition: [],
+      category: [],
+      location: 'all',
+      listingAge: 'all'
+    });
   };
-
-  const FilterOptions = () => (
-    <div className="space-y-6">
-      <ActiveFilters 
-        searchTerm={searchParams.get('q') || undefined}
-        onClearSearch={clearSearch}
-      />
-      
-      <div>
-        <h4 className="mb-2 text-sm font-medium">Condition</h4>
-        <div className="space-y-2">
-          {conditions.map((condition) => (
-            <div key={condition} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`condition-${condition}`}
-                checked={filters.condition.includes(condition)}
-                onCheckedChange={() => handleFilterChange('condition', condition)}
-              />
-              <Label htmlFor={`condition-${condition}`} className="text-sm">
-                {condition}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-      
-      <div>
-        <h4 className="mb-2 text-sm font-medium">Category</h4>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`category-${category.id}`}
-                checked={filters.category.includes(category.id)}
-                onCheckedChange={() => handleFilterChange('category', category.id)}
-              />
-              <Label htmlFor={`category-${category.id}`} className="text-sm">
-                {category.icon} {category.name}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-      
-      <div>
-        <h4 className="mb-2 text-sm font-medium">Location</h4>
-        <RadioGroup value={filters.location} onValueChange={(value) => handleFilterChange('location', value)}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="location-all" />
-            <Label htmlFor="location-all" className="text-sm">All Locations</Label>
-          </div>
-          {neighborhoods.map((neighborhood) => (
-            <div key={neighborhood} className="flex items-center space-x-2">
-              <RadioGroupItem value={neighborhood} id={`location-${neighborhood}`} />
-              <Label htmlFor={`location-${neighborhood}`} className="text-sm">{neighborhood}</Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <Separator />
-      
-      <div>
-        <h4 className="mb-2 text-sm font-medium">Listing Age</h4>
-        <RadioGroup value={filters.listingAge} onValueChange={(value) => handleFilterChange('listingAge', value)}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="age-all" />
-            <Label htmlFor="age-all" className="text-sm">Any time</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="today" id="age-today" />
-            <Label htmlFor="age-today" className="text-sm">Today</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="week" id="age-week" />
-            <Label htmlFor="age-week" className="text-sm">This week</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="month" id="age-month" />
-            <Label htmlFor="age-month" className="text-sm">This month</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      
-      <div className="pt-4 flex gap-2">
-        <Button 
-          className="flex-1" 
-          variant="default"
-          onClick={() => setFilters({
-            condition: [],
-            category: [],
-            location: 'all',
-            listingAge: 'all'
-          })}
-        >
-          Reset Filters
-        </Button>
-      </div>
-    </div>
-  );
 
   if (error) {
     toast({
@@ -329,6 +219,16 @@ const ListingGrid = () => {
       variant: "destructive",
     });
   }
+
+  const FilterOptions = () => (
+    <FiltersSection
+      filters={filters}
+      onFilterChange={handleFilterChange}
+      onResetFilters={resetFilters}
+      searchTerm={searchParams.get('q') || undefined}
+      onClearSearch={clearSearch}
+    />
+  );
 
   return (
     <div className="w-full">
@@ -360,26 +260,7 @@ const ListingGrid = () => {
               </SheetContent>
             </Sheet>
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-tech-primary text-white hover:bg-tech-secondary">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Sort by: {getSortButtonText()}
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortBy('latest')} className={sortBy === 'latest' ? "bg-muted" : ""}>
-                  Latest
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('oldest')} className={sortBy === 'oldest' ? "bg-muted" : ""}>
-                  Oldest
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className={sortBy === 'alphabetical' ? "bg-muted" : ""}>
-                  Alphabetical (A-Z)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ListingSorter sortBy={sortBy} onSortChange={setSortBy} />
           )}
         </div>
       </div>
@@ -394,42 +275,14 @@ const ListingGrid = () => {
           </div>
           
           <div className="lg:col-span-3">
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : listings && listings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {listings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-muted-foreground">No items found. Try adjusting your filters.</p>
-              </div>
-            )}
+            <ListingsContent listings={listings} isLoading={isLoading} />
           </div>
         </div>
       )}
       
       {isMobile && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {isLoading ? (
-            [...Array(4)].map((_, i) => (
-              <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-            ))
-          ) : listings && listings.length > 0 ? (
-            listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
-              <p className="text-muted-foreground">No items found. Try adjusting your filters.</p>
-            </div>
-          )}
+          <ListingsContent listings={listings} isLoading={isLoading} />
         </div>
       )}
       

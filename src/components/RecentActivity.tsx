@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +16,10 @@ const RecentActivity = () => {
         .from('activities')
         .select(`
           *,
-          listings (
+          listings:item_id (
             title
           ),
-          profiles (
+          profiles:user_id (
             full_name
           )
         `)
