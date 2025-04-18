@@ -65,9 +65,9 @@ const About = () => {
           <div className="mt-16 max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold mb-6">Our Mission</h2>
             <p className="text-muted-foreground mb-4">
-              Harlem4Home aims to bridge the digital divide by connecting those who have 
-              surplus technology with those who need it. We believe that access to technology 
-              is crucial for education, employment, and participation in modern society.
+              Harlem4Home aims to get old and broken or useless technology to hands that know how to utilize it better.
+              In a manner that's easy, secure, and fulfilling.
+              Additionally, the redistribution of what would otherwise become e-waste means a greener planet for our future.
             </p>
             <p className="text-muted-foreground mb-4">
               By facilitating the redistribution of used but functional tech items within our 
