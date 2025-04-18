@@ -18,7 +18,7 @@ interface Activity {
     title: string;
   } | null;
   profiles?: {
-    full_name: string | null;
+    full_name?: string | null;
   } | null;
 }
 
@@ -43,7 +43,8 @@ const RecentActivity = () => {
         .limit(5);
 
       if (error) throw error;
-      return data as Activity[];
+      // Using a type assertion with unknown to ensure safe type conversion
+      return (data || []) as unknown as Activity[];
     }
   });
 

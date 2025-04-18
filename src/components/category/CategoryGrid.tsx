@@ -44,7 +44,7 @@ const CategoryGrid = () => {
         <CategoryCard 
           key={category.id} 
           category={{
-            ...category,
+            ...category, // Spread the entire category object which includes description
             count: categoryCounts?.[category.id] || 0
           }} 
         />
