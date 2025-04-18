@@ -7,6 +7,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
+// Define a type for the activity data structure
+interface Activity {
+  id: string;
+  action_type: string;
+  created_at: string;
+  item_id: string | null;
+  user_id: string;
+  listings?: {
+    title: string;
+  } | null;
+  profiles?: {
+    full_name: string | null;
+  } | null;
+}
+
 const RecentActivity = () => {
   const { toast } = useToast();
 
@@ -28,7 +43,7 @@ const RecentActivity = () => {
         .limit(5);
 
       if (error) throw error;
-      return data;
+      return data as Activity[];
     }
   });
 
