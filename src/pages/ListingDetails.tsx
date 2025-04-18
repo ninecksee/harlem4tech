@@ -34,8 +34,9 @@ interface Listing {
 
 interface Profile {
   full_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
+  // Remove first_name and last_name as they don't exist in the profiles table
+  // first_name: string | null;
+  // last_name: string | null;
 }
 
 interface ListingImage {
@@ -82,17 +83,18 @@ const ListingDetails = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, first_name, last_name')
+        .select('full_name')  // Only select columns that actually exist
         .eq('id', listing.user_id)
         .single();
       
       if (error) {
         console.error('Error fetching profile:', error);
         // Don't throw, just return a default profile
-        setOwnerProfile({ full_name: null, first_name: null, last_name: null });
+        setOwnerProfile({ full_name: null });
         return null;
       }
       
+      // Cast to Profile after ensuring the shape matches
       const profile = data as Profile;
       setOwnerProfile(profile);
       return profile;
@@ -143,10 +145,15 @@ const ListingDetails = () => {
   const getUserDisplayName = (profile: Profile | null) => {
     if (!profile) return 'Unknown User';
     
-    const firstName = profile.first_name || (profile.full_name ? profile.full_name.split(' ')[0] : 'Unknown');
-    const lastName = profile.last_name || (profile.full_name ? profile.full_name.split(' ').slice(1).join(' ') : '');
+    // Updated to work with only full_name
+    if (profile.full_name) {
+      const nameParts = profile.full_name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1][0] + '.' : '';
+      return lastName ? `${firstName} ${lastName}` : firstName;
+    }
     
-    return lastName ? `${firstName} ${lastName[0]}.` : firstName;
+    return 'Unknown User';
   };
 
   const handleSendMessage = async () => {
