@@ -1,4 +1,3 @@
-
 export interface Listing {
   id: string;
   title: string;
@@ -21,6 +20,7 @@ export interface Category {
   name: string;
   icon: string;
   count: number;
+  description: string;
 }
 
 // Placeholder image paths - we would replace these with actual images in a real app
@@ -36,14 +36,14 @@ const placeholderImages = [
 ];
 
 export const categories: Category[] = [
-  { id: 'computers', name: 'Computers', icon: '💻', count: 24 },
-  { id: 'phones', name: 'Phones', icon: '📱', count: 18 },
-  { id: 'accessories', name: 'Accessories', icon: '🎧', count: 32 },
-  { id: 'screens', name: 'Monitors', icon: '🖥️', count: 15 },
-  { id: 'tablets', name: 'Tablets', icon: '📟', count: 9 },
-  { id: 'cameras', name: 'Cameras', icon: '📷', count: 12 },
-  { id: 'gaming', name: 'Gaming', icon: '🎮', count: 21 },
-  { id: 'other', name: 'Other', icon: '🔌', count: 19 },
+  { id: 'computers', name: 'Computers', icon: '💻', count: 24, description: 'Laptops, desktops, and parts' },
+  { id: 'phones', name: 'Phones', icon: '📱', count: 18, description: 'Smartphones and mobile devices' },
+  { id: 'accessories', name: 'Accessories', icon: '🎧', count: 32, description: 'Headphones, cables, and peripherals' },
+  { id: 'screens', name: 'Monitors', icon: '🖥️', count: 15, description: 'Display screens and projectors' },
+  { id: 'tablets', name: 'Tablets', icon: '📟', count: 9, description: 'Tablets and e-readers' },
+  { id: 'cameras', name: 'Cameras', icon: '📷', count: 12, description: 'Digital cameras and video equipment' },
+  { id: 'gaming', name: 'Gaming', icon: '🎮', count: 21, description: 'Consoles and gaming accessories' },
+  { id: 'other', name: 'Other', icon: '🔌', count: 19, description: 'Other electronic items' },
 ];
 
 export const neighborhoods = [
