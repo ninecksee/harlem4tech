@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -42,8 +43,6 @@ interface ListingImage {
   order_index: number;
 }
 
-type ProfileResponse = Profile | null | { error: true };
-
 const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -51,7 +50,9 @@ const ListingDetails = () => {
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
 
+  // First query to get the listing details
   const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
@@ -59,14 +60,7 @@ const ListingDetails = () => {
       
       const { data, error } = await supabase
         .from('listings')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -75,25 +69,35 @@ const ListingDetails = () => {
         throw error;
       }
       
-      let profileData: Profile = { 
-        full_name: null, 
-        first_name: null, 
-        last_name: null 
-      };
+      return data as Listing;
+    },
+    retry: 1,
+  });
+
+  // Separate query to get owner profile data once we have the listing
+  const { isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', listing?.user_id],
+    queryFn: async () => {
+      if (!listing?.user_id) return null;
       
-      if (data && data.profiles) {
-        if ('error' in data.profiles) {
-          console.log('Error in profiles data:', data.profiles);
-        } else {
-          profileData = data.profiles as Profile;
-        }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, first_name, last_name')
+        .eq('id', listing.user_id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // Don't throw, just return a default profile
+        setOwnerProfile({ full_name: null, first_name: null, last_name: null });
+        return null;
       }
       
-      return {
-        ...data,
-        profiles: profileData
-      } as Listing & { profiles: Profile };
+      const profile = data as Profile;
+      setOwnerProfile(profile);
+      return profile;
     },
+    enabled: !!listing?.user_id,
     retry: 1,
   });
 
@@ -136,7 +140,7 @@ const ListingDetails = () => {
     fetchImages();
   }, [id]);
 
-  const getUserDisplayName = (profile: Profile | undefined) => {
+  const getUserDisplayName = (profile: Profile | null) => {
     if (!profile) return 'Unknown User';
     
     const firstName = profile.first_name || (profile.full_name ? profile.full_name.split(' ')[0] : 'Unknown');
@@ -175,7 +179,9 @@ const ListingDetails = () => {
     }
   };
 
-  if (listingLoading) {
+  const isLoading = listingLoading || profileLoading;
+
+  if (isLoading && !listing) {
     return <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
@@ -234,7 +240,7 @@ const ListingDetails = () => {
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-muted-foreground">{listing.location}</p>
                 <span className="text-muted-foreground">•</span>
-                <p className="text-muted-foreground">Listed by {getUserDisplayName(listing.profiles)}</p>
+                <p className="text-muted-foreground">Listed by {getUserDisplayName(ownerProfile)}</p>
               </div>
             </div>
 
