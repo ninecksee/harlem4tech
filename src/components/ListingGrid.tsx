@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -28,6 +27,7 @@ import {
 import { categories, conditions, neighborhoods, Listing } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import ActiveFilters from "./filters/ActiveFilters";
 
 interface Filters {
   condition: string[];
@@ -50,7 +50,6 @@ const ListingGrid = () => {
   });
   const [sortBy, setSortBy] = useState<SortOption>('latest');
 
-  // Initialize filters from URL params
   useEffect(() => {
     const categoryParam = searchParams.get('category');
     const locationParam = searchParams.get('location');
@@ -70,9 +69,12 @@ const ListingGrid = () => {
       }));
     }
     
-    // We don't handle the query param here as it would require text search functionality
-    // The query param is just being passed to the server for the backend to handle
-    
+    if (queryParam) {
+      setFilters(prev => ({
+        ...prev,
+        listingAge: 'all'
+      }));
+    }
   }, [searchParams]);
 
   const { data: listings, isLoading, error } = useQuery({
@@ -90,7 +92,6 @@ const ListingGrid = () => {
           )
         `);
       
-      // Apply text search if query param exists
       if (queryParam) {
         query = query.ilike('title', `%${queryParam}%`);
       }
@@ -124,7 +125,6 @@ const ListingGrid = () => {
         query = query.gte('created_at', dateFilter.toISOString());
       }
       
-      // Apply sorting
       switch (sortBy) {
         case 'latest':
           query = query.order('created_at', { ascending: false });
@@ -141,11 +141,9 @@ const ListingGrid = () => {
       
       if (listingsError) throw listingsError;
       
-      // Get unique user IDs from listings
       const userIds = listingsData?.map(item => item.user_id) || [];
       const uniqueUserIds = [...new Set(userIds)];
       
-      // Fetch profiles for these users
       let profiles: Record<string, { full_name?: string, avatar_url?: string }> = {};
       
       if (uniqueUserIds.length > 0) {
@@ -154,7 +152,6 @@ const ListingGrid = () => {
           .select('id, full_name, avatar_url')
           .in('id', uniqueUserIds);
           
-        // Create a lookup object for easy access
         if (profilesData) {
           profiles = profilesData.reduce((acc, profile) => {
             acc[profile.id] = {
@@ -166,7 +163,6 @@ const ListingGrid = () => {
         }
       }
       
-      // Transform the data to match the Listing interface
       return listingsData?.map(item => {
         const imagePath = item.listing_images?.[0]?.storage_path;
         const imageUrl = imagePath 
@@ -188,7 +184,7 @@ const ListingGrid = () => {
             name: userProfile.full_name || 'Anonymous',
             avatar: userProfile.avatar_url,
           },
-          isNew: new Date(item.created_at) > new Date(Date.now() - 86400000), // 24 hours
+          isNew: new Date(item.created_at) > new Date(Date.now() - 86400000),
           isFeatured: item.status === 'featured',
         } as Listing;
       }) || [];
@@ -208,13 +204,11 @@ const ListingGrid = () => {
     });
   };
 
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load listings. Please try again.",
-      variant: "destructive",
-    });
-  }
+  const clearSearch = () => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('q');
+    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`);
+  };
 
   const getSortButtonText = () => {
     switch (sortBy) {
@@ -226,6 +220,11 @@ const ListingGrid = () => {
 
   const FilterOptions = () => (
     <div className="space-y-6">
+      <ActiveFilters 
+        searchTerm={searchParams.get('q') || undefined}
+        onClearSearch={clearSearch}
+      />
+      
       <div>
         <h4 className="mb-2 text-sm font-medium">Condition</h4>
         <div className="space-y-2">
@@ -322,6 +321,14 @@ const ListingGrid = () => {
       </div>
     </div>
   );
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load listings. Please try again.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <div className="w-full">

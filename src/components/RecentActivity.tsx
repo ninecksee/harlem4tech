@@ -1,54 +1,96 @@
 
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { recentActivities } from "@/data/mockData";
 import { PlusCircle, Handshake } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 const RecentActivity = () => {
+  const { toast } = useToast();
+
+  const { data: activities, refetch } = useQuery({
+    queryKey: ['recent-activities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select(`
+          *,
+          listings (
+            title
+          ),
+          profiles (
+            full_name
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'activities' },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
-        {recentActivities.map((activity) => (
+        {activities?.map((activity) => (
           <div 
             key={activity.id}
             className="flex items-center gap-4 rounded-md border p-3"
           >
             <div className={`rounded-full p-2 ${
-              activity.type === 'claim' 
+              activity.action_type === 'claim' 
                 ? 'bg-green-100' 
                 : 'bg-blue-100'
             }`}>
-              {activity.type === 'claim' ? (
-                <Handshake className={`h-4 w-4 ${
-                  activity.type === 'claim'
-                    ? 'text-green-600'
-                    : 'text-blue-600'
-                }`} />
+              {activity.action_type === 'claim' ? (
+                <Handshake className="h-4 w-4 text-green-600" />
               ) : (
-                <PlusCircle className={`h-4 w-4 ${
-                  activity.type === 'claim'
-                    ? 'text-green-600'
-                    : 'text-blue-600'
-                }`} />
+                <PlusCircle className="h-4 w-4 text-blue-600" />
               )}
             </div>
             <div className="flex-1 space-y-1">
               <p className="text-sm font-medium">
-                {activity.user}
+                {activity.profiles?.full_name?.split(' ')[0] || 'Someone'}
                 <span className="text-muted-foreground font-normal">
                   {' '}
-                  {activity.type === 'claim' ? 'claimed' : 'listed'}{' '}
+                  {activity.action_type === 'claim' ? 'claimed' : 'listed'}{' '}
                 </span>
-                {activity.item}
+                {activity.listings?.title}
               </p>
               <p className="text-xs text-muted-foreground">
-                {activity.time}
+                {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
               </p>
             </div>
           </div>
         ))}
+        {(!activities || activities.length === 0) && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No recent activity
+          </p>
+        )}
       </CardContent>
     </Card>
   );
