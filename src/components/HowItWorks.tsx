@@ -7,7 +7,6 @@ const HowItWorks = () => {
   return (
     <div className="w-full py-12">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold mb-4">How Tech Treasure Trove Works</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Help reduce e-waste while helping your community get access to the tech they need.
           Follow these simple steps to get started.
