@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ import FiltersSection from "./filters/FiltersSection";
 import ListingSorter from "./listing/ListingSorter";
 import ListingsContent from "./listing/ListingsContent";
 import RecentActivity from "./RecentActivity";
+import { Listing } from "@/data/mockData"; // Import the Listing type
 
 interface Filters {
   condition: string[];
