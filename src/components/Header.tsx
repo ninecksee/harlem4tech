@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CircuitBoard, Menu, PlusCircle, Search, User, LogOut } from "lucide-react";
 import {
@@ -15,10 +16,14 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import SearchBar from "./SearchBar";
+import { useState } from "react";
 
 const Header = () => {
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -34,15 +39,15 @@ const Header = () => {
         
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center space-x-4 text-sm font-medium">
-            <Link to="/" className="text-foreground/60 hover:text-foreground">Browse</Link>
-            <a href="/#categories" className="text-foreground/60 hover:text-foreground">Categories</a>
-            <Link to="/how-it-works" className="text-foreground/60 hover:text-foreground">How It Works</Link>
-            <Link to="/about" className="text-foreground/60 hover:text-foreground">About</Link>
+            <Link to="/" className={`${location.pathname === '/' ? 'text-foreground' : 'text-foreground/60'} hover:text-foreground`}>Browse</Link>
+            <Link to="/#categories-section" className="text-foreground/60 hover:text-foreground">Categories</Link>
+            <Link to="/how-it-works" className={`${location.pathname === '/how-it-works' ? 'text-foreground' : 'text-foreground/60'} hover:text-foreground`}>How It Works</Link>
+            <Link to="/about" className={`${location.pathname === '/about' ? 'text-foreground' : 'text-foreground/60'} hover:text-foreground`}>About</Link>
           </nav>
         </div>
         
         <div className="flex items-center gap-3">
-          <Dialog>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-foreground/60">
                 <Search className="h-5 w-5" />
@@ -101,7 +106,7 @@ const Header = () => {
                   <Link to="/">Browse</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/categories">Categories</Link>
+                  <Link to="/#categories-section">Categories</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/how-it-works">How It Works</Link>

@@ -1,7 +1,8 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, MessagesSquare, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const HowItWorks = () => {
   return (
@@ -70,8 +71,8 @@ const HowItWorks = () => {
       </div>
       
       <div className="flex justify-center mt-10">
-        <Button className="bg-tech-primary hover:bg-tech-secondary px-8 py-6">
-          Post Your First Item
+        <Button className="bg-tech-primary hover:bg-tech-secondary px-8 py-6" asChild>
+          <Link to="/create-listing">Post Your First Item</Link>
         </Button>
       </div>
     </div>

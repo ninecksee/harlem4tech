@@ -16,12 +16,10 @@ const ListingCard = ({ listing }: ListingCardProps) => {
   const navigate = useNavigate();
   const { id, title, description, image, condition, location, postedAt, user, isNew, isFeatured } = listing;
   
-  // Only show first name and last initial
+  // Show only first name
   const getUserDisplayName = (name: string) => {
-    const [firstName, ...lastName] = name.split(' ');
-    return lastName.length > 0 
-      ? `${firstName} ${lastName[lastName.length - 1][0]}.` 
-      : firstName;
+    if (!name) return "Anonymous";
+    return name.split(' ')[0]; // Only first name
   };
 
   const displayName = getUserDisplayName(user.name);
@@ -34,10 +32,6 @@ const ListingCard = ({ listing }: ListingCardProps) => {
       case 'Like New': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
@@ -103,7 +97,10 @@ const ListingCard = ({ listing }: ListingCardProps) => {
         <Button 
           size="sm" 
           className="bg-tech-primary hover:bg-tech-secondary"
-          onClick={() => navigate(`/listing/${id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/listing/${id}`);
+          }}
         >
           Claim It
         </Button>

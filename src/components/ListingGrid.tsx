@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ListingCard from "./ListingCard";
 import { Button } from "@/components/ui/button";
-import { Filter, SlidersHorizontal } from "lucide-react";
+import { Filter, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
@@ -18,6 +19,12 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { categories, conditions, neighborhoods, Listing } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -29,19 +36,50 @@ interface Filters {
   listingAge: string;
 }
 
+type SortOption = 'latest' | 'oldest' | 'alphabetical';
+
 const ListingGrid = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<Filters>({
     condition: [],
     category: [],
     location: 'all',
     listingAge: 'all'
   });
+  const [sortBy, setSortBy] = useState<SortOption>('latest');
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    const locationParam = searchParams.get('location');
+    const queryParam = searchParams.get('q');
+    
+    if (categoryParam) {
+      setFilters(prev => ({
+        ...prev,
+        category: [categoryParam]
+      }));
+    }
+    
+    if (locationParam) {
+      setFilters(prev => ({
+        ...prev,
+        location: locationParam
+      }));
+    }
+    
+    // We don't handle the query param here as it would require text search functionality
+    // The query param is just being passed to the server for the backend to handle
+    
+  }, [searchParams]);
 
   const { data: listings, isLoading, error } = useQuery({
-    queryKey: ['listings', filters],
+    queryKey: ['listings', filters, sortBy, searchParams.toString()],
     queryFn: async () => {
+      const queryParam = searchParams.get('q');
+      
       let query = supabase
         .from('listings')
         .select(`
@@ -50,8 +88,12 @@ const ListingGrid = () => {
             storage_path,
             order_index
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
+      
+      // Apply text search if query param exists
+      if (queryParam) {
+        query = query.ilike('title', `%${queryParam}%`);
+      }
 
       if (filters.condition.length > 0) {
         query = query.in('condition', filters.condition);
@@ -80,6 +122,19 @@ const ListingGrid = () => {
             break;
         }
         query = query.gte('created_at', dateFilter.toISOString());
+      }
+      
+      // Apply sorting
+      switch (sortBy) {
+        case 'latest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'alphabetical':
+          query = query.order('title', { ascending: true });
+          break;
       }
 
       const { data: listingsData, error: listingsError } = await query;
@@ -130,7 +185,7 @@ const ListingGrid = () => {
           location: item.location,
           postedAt: formatDistanceToNow(new Date(item.created_at), { addSuffix: true }),
           user: {
-            name: userProfile.full_name || 'Anonymous User',
+            name: userProfile.full_name || 'Anonymous',
             avatar: userProfile.avatar_url,
           },
           isNew: new Date(item.created_at) > new Date(Date.now() - 86400000), // 24 hours
@@ -160,6 +215,14 @@ const ListingGrid = () => {
       variant: "destructive",
     });
   }
+
+  const getSortButtonText = () => {
+    switch (sortBy) {
+      case 'latest': return 'Latest';
+      case 'oldest': return 'Oldest';
+      case 'alphabetical': return 'A-Z';
+    }
+  };
 
   const FilterOptions = () => (
     <div className="space-y-6">
@@ -263,7 +326,7 @@ const ListingGrid = () => {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Available Tech Treasures</h2>
+        <h2 className="text-2xl font-bold">Available Items</h2>
         
         <div className="flex items-center gap-2">
           <div className="text-sm text-muted-foreground">
@@ -282,7 +345,7 @@ const ListingGrid = () => {
                 <SheetHeader>
                   <SheetTitle>Filters</SheetTitle>
                   <SheetDescription>
-                    Narrow down your tech treasure hunt
+                    Narrow down your search
                   </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
@@ -290,10 +353,26 @@ const ListingGrid = () => {
               </SheetContent>
             </Sheet>
           ) : (
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Sort by: Latest
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-tech-primary text-white hover:bg-tech-secondary">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Sort by: {getSortButtonText()}
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSortBy('latest')} className={sortBy === 'latest' ? "bg-muted" : ""}>
+                  Latest
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('oldest')} className={sortBy === 'oldest' ? "bg-muted" : ""}>
+                  Oldest
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className={sortBy === 'alphabetical' ? "bg-muted" : ""}>
+                  Alphabetical (A-Z)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -314,11 +393,15 @@ const ListingGrid = () => {
                   <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
                 ))}
               </div>
-            ) : (
+            ) : listings && listings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {listings?.map((listing) => (
+                {listings.map((listing) => (
                   <ListingCard key={listing.id} listing={listing} />
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-muted-foreground">No items found. Try adjusting your filters.</p>
               </div>
             )}
           </div>
@@ -331,17 +414,23 @@ const ListingGrid = () => {
             [...Array(4)].map((_, i) => (
               <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
             ))
-          ) : (
-            listings?.map((listing) => (
+          ) : listings && listings.length > 0 ? (
+            listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))
+          ) : (
+            <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-muted-foreground">No items found. Try adjusting your filters.</p>
+            </div>
           )}
         </div>
       )}
       
-      <div className="mt-8 flex justify-center">
-        <Button variant="outline" className="px-8">Load More</Button>
-      </div>
+      {listings && listings.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <Button variant="outline" className="px-8">Load More</Button>
+        </div>
+      )}
     </div>
   );
 };

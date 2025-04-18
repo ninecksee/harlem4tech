@@ -4,36 +4,44 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { categories, neighborhoods } from "@/data/mockData";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const SearchBar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
-  const [location, setLocation] = useState('all');
+  const [location_, setLocation] = useState('all');
+
+  // Initialize search state from URL params when component mounts
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+    setCategory(params.get('category') || 'all');
+    setLocation(params.get('location') || 'all');
+  }, [location.search]);
 
   const handleSearch = () => {
-    const searchParams = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams();
     
     if (search) searchParams.set('q', search);
-    else searchParams.delete('q');
-    
     if (category !== 'all') searchParams.set('category', category);
-    else searchParams.delete('category');
-    
-    if (location !== 'all') searchParams.set('location', location);
-    else searchParams.delete('location');
+    if (location_ !== 'all') searchParams.set('location', location_);
     
     const queryString = searchParams.toString();
+    
+    // Always navigate to home with search params
     navigate(queryString ? `/?${queryString}` : '/');
 
     // Scroll to listings section if we're on the homepage
-    if (window.location.pathname === '/') {
-      const listingsSection = document.getElementById('listings-section');
-      if (listingsSection) {
-        listingsSection.scrollIntoView({ behavior: 'smooth' });
-      }
+    if (location.pathname === '/') {
+      setTimeout(() => {
+        const listingsSection = document.getElementById('listings-section');
+        if (listingsSection) {
+          listingsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -70,7 +78,7 @@ const SearchBar = () => {
         </div>
         
         <div>
-          <Select value={location} onValueChange={setLocation}>
+          <Select value={location_} onValueChange={setLocation}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
@@ -91,7 +99,7 @@ const SearchBar = () => {
             className="w-full bg-tech-primary hover:bg-tech-secondary"
           >
             <Search className="mr-2 h-4 w-4" />
-            Find Tech Treasures
+            Find Available Items
           </Button>
         </div>
       </div>

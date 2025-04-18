@@ -1,3 +1,4 @@
+
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import CategorySection from "@/components/CategorySection";
@@ -32,9 +33,9 @@ const Index = () => {
         {/* Hero Section */}
         <section className="relative bg-tech-dark text-white overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-circuit-pattern"></div>
-          <div className="container relative z-10 py-16 md:py-24 flex flex-col md:flex-row gap-8 items-center">
-            <div className="md:w-1/2 space-y-6">
-              <div className="flex items-center mb-4">
+          <div className="container relative z-10 py-16 md:py-24 flex flex-col items-center text-center">
+            <div className="space-y-6 max-w-3xl mx-auto">
+              <div className="flex items-center justify-center mb-4">
                 <CircuitBoard className="h-8 w-8 text-tech-primary mr-2" />
                 <span className="bg-tech-primary/20 text-tech-primary text-sm px-3 py-1 rounded-full">
                   Community Tech Exchange
@@ -45,11 +46,11 @@ const Index = () => {
                 Give Your Old Tech <span className="text-tech-primary">A New Home</span>
               </h1>
               
-              <p className="text-tech-light/80 text-lg max-w-md">
+              <p className="text-tech-light/80 text-lg max-w-md mx-auto">
                 Connect with neighbors to share unwanted tech items. Reduce waste while helping others access technology.
               </p>
               
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 justify-center">
                 <Button 
                   className="bg-tech-primary hover:bg-tech-secondary"
                   onClick={handlePostItem}
@@ -59,24 +60,12 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   className="bg-transparent border-tech-light/30 hover:bg-tech-dark/50"
-                  onClick={() => navigate('/categories')}
+                  onClick={() => {
+                    document.getElementById('listings-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   Browse Items
                 </Button>
-              </div>
-            </div>
-            
-            <div className="md:w-1/2">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/b3fad430-c636-4c4a-990a-5d2cb76613fe.png" 
-                  alt="Tech Treasure Trove" 
-                  className="rounded-lg shadow-2xl max-h-[400px] object-contain mx-auto"
-                />
-                <div className="absolute -bottom-3 -right-3 bg-tech-primary text-white p-3 rounded-lg shadow-lg">
-                  <p className="text-sm font-bold">100% Free</p>
-                  <p className="text-xs">No fees, just community</p>
-                </div>
               </div>
             </div>
           </div>
@@ -89,12 +78,12 @@ const Index = () => {
         </section>
         
         {/* Categories Section */}
-        <section className="container">
+        <section id="categories-section" className="container">
           <CategorySection />
         </section>
         
         {/* Main Content Section */}
-        <section className="container py-8">
+        <section id="listings-section" className="container py-8">
           {isMobile ? (
             <>
               <ListingGrid />
@@ -125,7 +114,7 @@ const Index = () => {
         <section className="container py-16">
           <div className="bg-tech-primary rounded-xl p-8 md:p-12 text-white text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Ready to Join the Tech Sharing Community?
+              Ready to Join the Harlem4Home Community?
             </h2>
             <p className="text-white/80 mb-8 max-w-lg mx-auto">
               Your unused tech could be someone else's treasure. Get started today and make a difference in your community.
