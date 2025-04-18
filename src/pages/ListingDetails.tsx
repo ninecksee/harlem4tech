@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -43,6 +42,8 @@ interface ListingImage {
   order_index: number;
 }
 
+type ProfileResponse = Profile | null | { error: true };
+
 const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -51,7 +52,7 @@ const ListingDetails = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
-  const { data: listing, isLoading } = useQuery({
+  const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
       if (!id) throw new Error('No listing ID provided');
@@ -74,13 +75,24 @@ const ListingDetails = () => {
         throw error;
       }
       
-      // Handle case where profiles could be an error object
-      if (data && typeof data.profiles === 'object' && 'error' in data.profiles) {
-        // Create a compatible profile object with null values
-        data.profiles = { full_name: null, first_name: null, last_name: null };
+      let profileData: Profile = { 
+        full_name: null, 
+        first_name: null, 
+        last_name: null 
+      };
+      
+      if (data && data.profiles) {
+        if ('error' in data.profiles) {
+          console.log('Error in profiles data:', data.profiles);
+        } else {
+          profileData = data.profiles as Profile;
+        }
       }
       
-      return data as Listing & { profiles: Profile };
+      return {
+        ...data,
+        profiles: profileData
+      } as Listing & { profiles: Profile };
     },
     retry: 1,
   });
@@ -163,7 +175,7 @@ const ListingDetails = () => {
     }
   };
 
-  if (isLoading) {
+  if (listingLoading) {
     return <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
