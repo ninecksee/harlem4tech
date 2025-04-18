@@ -6,8 +6,8 @@ import { PlusCircle, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "react-router-dom";
 
-// Define a type for the activity data structure
 interface Activity {
   id: string;
   action_type: string;
@@ -18,13 +18,12 @@ interface Activity {
     title: string;
   } | null;
   profiles?: {
-    full_name?: string | null;
+    full_name: string | null;
   } | null;
 }
 
 const RecentActivity = () => {
   const { toast } = useToast();
-
   const { data: activities, refetch } = useQuery({
     queryKey: ['recent-activities'],
     queryFn: async () => {
@@ -43,8 +42,7 @@ const RecentActivity = () => {
         .limit(5);
 
       if (error) throw error;
-      // Using a type assertion with unknown to ensure safe type conversion
-      return (data || []) as unknown as Activity[];
+      return data as Activity[];
     }
   });
 
@@ -94,7 +92,16 @@ const RecentActivity = () => {
                   {' '}
                   {activity.action_type === 'claim' ? 'claimed' : 'listed'}{' '}
                 </span>
-                {activity.listings?.title}
+                {activity.item_id ? (
+                  <Link 
+                    to={`/listing/${activity.item_id}`}
+                    className="text-primary hover:underline"
+                  >
+                    {activity.listings?.title}
+                  </Link>
+                ) : (
+                  activity.listings?.title
+                )}
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}

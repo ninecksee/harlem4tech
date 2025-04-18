@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import ChatDialog from "@/components/chat/ChatDialog";
 
 interface Listing {
   id: string;
@@ -34,9 +34,6 @@ interface Listing {
 
 interface Profile {
   full_name: string | null;
-  // Remove first_name and last_name as they don't exist in the profiles table
-  // first_name: string | null;
-  // last_name: string | null;
 }
 
 interface ListingImage {
@@ -53,7 +50,6 @@ const ListingDetails = () => {
   const [message, setMessage] = useState('');
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
 
-  // First query to get the listing details
   const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
@@ -75,7 +71,6 @@ const ListingDetails = () => {
     retry: 1,
   });
 
-  // Separate query to get owner profile data once we have the listing
   const { isLoading: profileLoading } = useQuery({
     queryKey: ['profile', listing?.user_id],
     queryFn: async () => {
@@ -83,18 +78,16 @@ const ListingDetails = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name')  // Only select columns that actually exist
+        .select('full_name')
         .eq('id', listing.user_id)
         .single();
       
       if (error) {
         console.error('Error fetching profile:', error);
-        // Don't throw, just return a default profile
         setOwnerProfile({ full_name: null });
         return null;
       }
       
-      // Cast to Profile after ensuring the shape matches
       const profile = data as Profile;
       setOwnerProfile(profile);
       return profile;
@@ -145,7 +138,6 @@ const ListingDetails = () => {
   const getUserDisplayName = (profile: Profile | null) => {
     if (!profile) return 'Unknown User';
     
-    // Updated to work with only full_name
     if (profile.full_name) {
       const nameParts = profile.full_name.split(' ');
       const firstName = nameParts[0];
@@ -274,36 +266,10 @@ const ListingDetails = () => {
             </div>
 
             {user && user.id !== listing.user_id && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="w-full">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Contact Owner
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Send a message about this item</DialogTitle>
-                    <DialogDescription>
-                      Your message will be sent to the owner of this item.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Your message</Label>
-                      <Textarea
-                        id="message"
-                        placeholder="Hi! I'm interested in your item..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                      />
-                    </div>
-                    <Button onClick={handleSendMessage} className="w-full">
-                      Send Message
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <ChatDialog
+                listingId={listing.id}
+                recipientId={listing.user_id}
+              />
             )}
           </div>
         </div>
