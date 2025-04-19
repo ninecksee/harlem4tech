@@ -27,22 +27,50 @@ const RecentActivity = () => {
   const { data: activities, refetch } = useQuery({
     queryKey: ['recent-activities'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('activities')
-        .select(`
-          *,
-          listings:item_id (
-            title
-          ),
-          profiles:user_id (
-            full_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      try {
+        const { data, error } = await supabase
+          .from('activities')
+          .select(`
+            id,
+            action_type,
+            created_at,
+            item_id,
+            user_id,
+            listings:item_id (
+              title
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-      if (error) throw error;
-      return data as Activity[];
+        if (error) throw error;
+        
+        // Fetch profile information separately since the direct join isn't working
+        const activitiesWithProfiles = await Promise.all(
+          (data || []).map(async (activity) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', activity.user_id)
+              .single();
+              
+            return {
+              ...activity,
+              profiles: profileData || { full_name: null }
+            };
+          })
+        );
+        
+        return activitiesWithProfiles as Activity[];
+      } catch (error) {
+        console.error("Error fetching recent activities:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch recent activities",
+          variant: "destructive",
+        });
+        return [];
+      }
     }
   });
 
@@ -97,10 +125,10 @@ const RecentActivity = () => {
                     to={`/listing/${activity.item_id}`}
                     className="text-primary hover:underline"
                   >
-                    {activity.listings?.title}
+                    {activity.listings?.title || 'an item'}
                   </Link>
                 ) : (
-                  activity.listings?.title
+                  activity.listings?.title || 'an item'
                 )}
               </p>
               <p className="text-xs text-muted-foreground">
