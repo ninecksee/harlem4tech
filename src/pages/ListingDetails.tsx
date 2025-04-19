@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -80,16 +81,16 @@ const ListingDetails = () => {
   });
 
   const getUserDisplayName = (profile: Profile | null) => {
-    if (!profile) return 'Unknown User';
+    if (!profile || !profile.full_name) return "Anonymous";
     
-    if (profile.full_name) {
-      const nameParts = profile.full_name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1][0] + '.' : '';
-      return lastName ? `${firstName} ${lastName}` : firstName;
-    }
+    const nameParts = profile.full_name.split(' ');
     
-    return 'Unknown User';
+    if (nameParts.length === 1) return nameParts[0];
+    
+    const firstName = nameParts[0];
+    const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1][0] + '.' : '';
+    
+    return lastInitial ? `${firstName} ${lastInitial}` : firstName;
   };
 
   const handleChatClick = () => {
@@ -145,7 +146,7 @@ const ListingDetails = () => {
               ) : null
             ) : (
               <Button 
-                className="w-full"
+                className="w-full mt-4"
                 onClick={handleChatClick}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />

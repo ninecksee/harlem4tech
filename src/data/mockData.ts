@@ -49,11 +49,16 @@ export const categories: Category[] = [
 export const neighborhoods = [
   'Downtown',
   'Midtown',
-  'Uptown',
+  'Upper Manhattan',
   'West Side',
   'East Side',
   'South End',
   'North Hills',
+  'North Harlem',
+  'Central Harlem',
+  'South Harlem',
+  'East Harlem',
+  'West Harlem',
 ];
 
 export const conditions = [
