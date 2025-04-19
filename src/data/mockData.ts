@@ -47,7 +47,7 @@ export const categories: Category[] = [
 ];
 
 export const neighborhoods = [
-  'Upper Manhattan'
+  'Upper Manhattan',
   'North Harlem',
   'Central Harlem',
   'South Harlem', 
