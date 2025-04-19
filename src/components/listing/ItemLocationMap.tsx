@@ -40,15 +40,15 @@ const ItemLocationMap: React.FC<ItemLocationMapProps> = ({ location }) => {
     };
   }, [location]);
   
-  // Calculate the center of the map
-  const { baseCoord, zoom } = locationCoordinates;
+  // Calculate the center of the map and the circle radius (approximately 0.5 miles)
+  const { baseCoord } = locationCoordinates;
   
-  // Create the OpenStreetMap URL with a circle marker
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${baseCoord[1] - 0.015}%2C${baseCoord[0] - 0.015}%2C${baseCoord[1] + 0.015}%2C${baseCoord[0] + 0.015}&layer=mapnik&marker=${baseCoord[0]}%2C${baseCoord[1]}`;
+  // Create the OpenStreetMap URL with both a marker and a circle
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${baseCoord[1] - 0.015}%2C${baseCoord[0] - 0.015}%2C${baseCoord[1] + 0.015}%2C${baseCoord[0] + 0.015}&layer=mapnik&marker=${baseCoord[0]}%2C${baseCoord[1]}&circle=${baseCoord[0]}%2C${baseCoord[1]}%2C800`;
 
   return (
-    <Card className="overflow-hidden border rounded-md">
-      <div className="aspect-video">
+    <Card className="overflow-hidden border rounded-md h-full">
+      <div className="aspect-square">
         <iframe 
           width="100%" 
           height="100%" 

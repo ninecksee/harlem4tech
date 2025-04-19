@@ -1,10 +1,8 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
-import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ChatDialog from "@/components/chat/ChatDialog";
@@ -34,6 +32,7 @@ const ListingDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
+  const [hasImages, setHasImages] = useState<boolean>(false);
 
   const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['listing', id],
@@ -46,14 +45,25 @@ const ListingDetails = () => {
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('Error fetching listing:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data as Listing;
     },
-    retry: 1,
+  });
+
+  // Add a new query to check for images
+  const { isLoading: imagesLoading } = useQuery({
+    queryKey: ['listing-images', id],
+    queryFn: async () => {
+      if (!id) return [];
+      
+      const { data } = await supabase
+        .from('listing_images')
+        .select('*')
+        .eq('listing_id', id);
+      
+      setHasImages(Boolean(data && data.length > 0));
+      return data;
+    },
   });
 
   const { isLoading: profileLoading } = useQuery({
@@ -100,7 +110,7 @@ const ListingDetails = () => {
     }
   };
 
-  const isLoading = listingLoading || profileLoading;
+  const isLoading = listingLoading || imagesLoading;
 
   if (isLoading && !listing) {
     return <div className="min-h-screen bg-background">
@@ -120,15 +130,20 @@ const ListingDetails = () => {
     </div>;
   }
 
-  const showChatButton = user && user.id !== listing.user_id;
-  const showSignInButton = !user;
+  const showChatButton = user && listing.user_id !== user.id;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-          <ImageGallery listingId={listing.id} />
+          {hasImages ? (
+            <ImageGallery listingId={listing.id} />
+          ) : (
+            <div className="aspect-square">
+              <ItemLocationMap location={listing.location} />
+            </div>
+          )}
 
           <div>
             <ListingInfo
@@ -142,26 +157,13 @@ const ListingDetails = () => {
             />
 
             {showChatButton && (
-              <ChatDialog
-                listingId={listing.id}
-                recipientId={listing.user_id}
-              />
+              <div className="mt-4">
+                <ChatDialog
+                  listingId={listing.id}
+                  recipientId={listing.user_id}
+                />
+              </div>
             )}
-            
-            {showSignInButton && (
-              <Button 
-                className="w-full mt-4"
-                onClick={handleChatClick}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Sign in to Chat
-              </Button>
-            )}
-            
-            <div className="mt-6">
-              <h3 className="font-medium mb-2">Location Area</h3>
-              <ItemLocationMap location={listing.location} />
-            </div>
           </div>
         </div>
       </main>
