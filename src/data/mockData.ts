@@ -53,8 +53,8 @@ export const neighborhoods = [
   'South Harlem', 
   'East Harlem',
   'West Harlem',
-  'Upper West Side'
-  'Upper East Side'
+  'Upper West Side',
+  'Upper East Side',
   'Midtown',
   'Downtown',
   'Brooklyn',
