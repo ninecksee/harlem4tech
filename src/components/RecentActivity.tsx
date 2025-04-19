@@ -24,7 +24,7 @@ interface Activity {
 
 const RecentActivity = () => {
   const { toast } = useToast();
-  const { data: activities, refetch } = useQuery({
+  const { data: activities, refetch, isLoading } = useQuery({
     queryKey: ['recent-activities'],
     queryFn: async () => {
       try {
@@ -52,7 +52,7 @@ const RecentActivity = () => {
           return [];
         }
         
-        // Then fetch user profiles separately to avoid relation issues
+        // Then fetch user profiles separately
         const activitiesWithProfiles = await Promise.all(
           data.map(async (activity) => {
             const { data: profileData, error: profileError } = await supabase
@@ -63,11 +63,15 @@ const RecentActivity = () => {
               
             if (profileError) {
               console.error("Error fetching profile:", profileError);
+              return {
+                ...activity,
+                profiles: { full_name: null }
+              };
             }
             
             return {
               ...activity,
-              profiles: profileData || { full_name: null }
+              profiles: profileData
             };
           })
         );
@@ -83,7 +87,9 @@ const RecentActivity = () => {
         });
         return [];
       }
-    }
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {
@@ -114,7 +120,7 @@ const RecentActivity = () => {
     if (nameParts.length === 1) return nameParts[0];
     
     const firstName = nameParts[0];
-    const lastInitial = nameParts[nameParts.length - 1][0];
+    const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '';
     
     return `${firstName} ${lastInitial}.`;
   };
@@ -125,7 +131,11 @@ const RecentActivity = () => {
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
-        {activities && activities.length > 0 ? (
+        {isLoading && (
+          <p className="text-sm text-center text-muted-foreground">Loading activities...</p>
+        )}
+        
+        {!isLoading && activities && activities.length > 0 ? (
           activities.map((activity) => (
             <div 
               key={activity.id}
@@ -167,9 +177,11 @@ const RecentActivity = () => {
             </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No recent activity
-          </p>
+          !isLoading && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No recent activity
+            </p>
+          )
         )}
       </CardContent>
     </Card>

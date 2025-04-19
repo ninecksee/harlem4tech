@@ -47,18 +47,18 @@ export const categories: Category[] = [
 ];
 
 export const neighborhoods = [
-  'Downtown',
-  'Midtown',
-  'Upper Manhattan',
-  'West Side',
-  'East Side',
-  'South End',
-  'North Hills',
   'North Harlem',
   'Central Harlem',
-  'South Harlem',
+  'South Harlem', 
   'East Harlem',
   'West Harlem',
+  'Upper Manhattan',
+  'Midtown',
+  'Downtown',
+  'Brooklyn',
+  'Queens',
+  'Bronx',
+  'Staten Island'
 ];
 
 export const conditions = [

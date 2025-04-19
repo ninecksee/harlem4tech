@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -82,6 +81,19 @@ const CreateListing = () => {
         .single();
 
       if (listingError) throw listingError;
+
+      // Create activity record for the new listing
+      const { error: activityError } = await supabase
+        .from('activities')
+        .insert({
+          action_type: 'list',
+          item_id: listing.id,
+          user_id: user.id,
+        });
+    
+      if (activityError) {
+        console.error('Error creating activity record:', activityError);
+      }
 
       // Upload images
       for (let i = 0; i < images.length; i++) {
@@ -220,7 +232,7 @@ const CreateListing = () => {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Location (Required)</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>

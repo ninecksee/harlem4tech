@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ChatDialog from "@/components/chat/ChatDialog";
 import ImageGallery from '@/components/listing/ImageGallery';
 import ListingInfo from '@/components/listing/ListingInfo';
+import ItemLocationMap from '@/components/listing/ItemLocationMap';
 
 interface Listing {
   id: string;
@@ -119,6 +120,9 @@ const ListingDetails = () => {
     </div>;
   }
 
+  const showChatButton = user && user.id !== listing.user_id;
+  const showSignInButton = !user;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -137,14 +141,14 @@ const ListingDetails = () => {
               ownerName={getUserDisplayName(ownerProfile)}
             />
 
-            {user ? (
-              user.id !== listing.user_id ? (
-                <ChatDialog
-                  listingId={listing.id}
-                  recipientId={listing.user_id}
-                />
-              ) : null
-            ) : (
+            {showChatButton && (
+              <ChatDialog
+                listingId={listing.id}
+                recipientId={listing.user_id}
+              />
+            )}
+            
+            {showSignInButton && (
               <Button 
                 className="w-full mt-4"
                 onClick={handleChatClick}
@@ -153,6 +157,11 @@ const ListingDetails = () => {
                 Sign in to Chat
               </Button>
             )}
+            
+            <div className="mt-6">
+              <h3 className="font-medium mb-2">Location Area</h3>
+              <ItemLocationMap location={listing.location} />
+            </div>
           </div>
         </div>
       </main>
