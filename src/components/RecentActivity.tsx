@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,11 +40,10 @@ const RecentActivity = () => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(3);
 
         if (error) throw error;
         
-        // Fetch profile information separately since the direct join isn't working
         const activitiesWithProfiles = await Promise.all(
           (data || []).map(async (activity) => {
             const { data: profileData } = await supabase

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -7,16 +7,6 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import ChatDialog from "@/components/chat/ChatDialog";
 
 interface Listing {
@@ -45,6 +35,7 @@ const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -178,6 +169,12 @@ const ListingDetails = () => {
     }
   };
 
+  const handleChatClick = () => {
+    if (!user) {
+      navigate('/auth', { state: { from: `/listing/${id}` } });
+    }
+  };
+
   const isLoading = listingLoading || profileLoading;
 
   if (isLoading && !listing) {
@@ -265,11 +262,21 @@ const ListingDetails = () => {
               </div>
             </div>
 
-            {user && user.id !== listing.user_id && (
-              <ChatDialog
-                listingId={listing.id}
-                recipientId={listing.user_id}
-              />
+            {user ? (
+              user.id !== listing.user_id ? (
+                <ChatDialog
+                  listingId={listing.id}
+                  recipientId={listing.user_id}
+                />
+              ) : null
+            ) : (
+              <Button 
+                className="w-full"
+                onClick={handleChatClick}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Sign in to Chat
+              </Button>
             )}
           </div>
         </div>
