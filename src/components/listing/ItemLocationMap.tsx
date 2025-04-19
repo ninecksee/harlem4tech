@@ -10,21 +10,20 @@ const ItemLocationMap: React.FC<ItemLocationMapProps> = ({ location }) => {
   // Coordinates for Harlem and Manhattan locations
   const locationCoordinates = useMemo(() => {
     // Base coordinates for different neighborhoods (approximate centers)
-    const baseCoords: Record<string, [number, number]> = {
-      'North Harlem': [40.825, -73.944],
-      'Central Harlem': [40.812, -73.946],
-      'South Harlem': [40.802, -73.952],
-      'East Harlem': [40.795, -73.932],
-      'West Harlem': [40.815, -73.955],
-      'Upper Manhattan': [40.835, -73.944],
-      'Midtown': [40.755, -73.978],
-      'Downtown': [40.725, -73.997],
-      'Brooklyn': [40.678, -73.944],
-      'Queens': [40.728, -73.794],
-      'Bronx': [40.837, -73.865],
-      'Staten Island': [40.579, -74.150],
-    };
-
+ const baseCoords: Record<string, [number, number]> = {
+   'North Harlem': [40.8185, -73.9448], // Updated
+   'Central Harlem': [40.8116, -73.9465], // Updated
+   'South Harlem': [40.8021, -73.9555], // Updated
+   'East Harlem': [40.7947, -73.9339], // Updated
+   'West Harlem': [40.8180, -73.9529], // Updated
+   'Upper Manhattan': [40.8417, -73.9393], // Updated
+   'Midtown': [40.7549, -73.9840], // Updated
+   'Downtown': [40.7131, -74.0072], // Updated
+   'Brooklyn': [40.6782, -73.9442], // Updated
+   'Queens': [40.7282, -73.7949], // Updated
+   'Bronx': [40.8448, -73.8648], // Updated
+   'Staten Island': [40.5795, -74.1502], // Updated
+ };
     // Default to Midtown if location not found
     const baseCoord = baseCoords[location] || [40.755, -73.978];
     
