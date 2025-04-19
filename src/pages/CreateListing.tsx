@@ -34,7 +34,7 @@ const formSchema = z.object({
   condition: z.string().min(1, 'Please select a condition'),
   category: z.string().min(1, 'Please select a category'),
   location: z.string().min(1, 'Please select a location'),
-  issues: z.string().min(10, 'Please describe any issues with the item'),
+  issues: z.string().min(3, 'Please describe any issues with the item (Issues must be at least three characters)'),
 });
 
 const CreateListing = () => {
