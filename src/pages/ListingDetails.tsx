@@ -130,7 +130,7 @@ const ListingDetails = () => {
     </div>;
   }
 
-  const showChatButton = user && listing.user_id !== user.id;
+  const showChatButton = listing.user_id !== user?.id;
 
   return (
     <div className="min-h-screen bg-background">
