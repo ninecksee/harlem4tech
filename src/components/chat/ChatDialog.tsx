@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface ChatDialogProps {
   listingId: string;
   recipientId: string;
+  recipientName?: string;
 }
 
 interface Message {
@@ -30,7 +31,7 @@ interface Message {
   read: boolean;
 }
 
-const ChatDialog = ({ listingId, recipientId }: ChatDialogProps) => {
+const ChatDialog = ({ listingId, recipientId, recipientName }: ChatDialogProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const { toast } = useToast();
@@ -42,7 +43,7 @@ const ChatDialog = ({ listingId, recipientId }: ChatDialogProps) => {
     if (isOpen) {
       fetchMessages();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchMessages]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -72,7 +73,7 @@ const ChatDialog = ({ listingId, recipientId }: ChatDialogProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  async function fetchMessages() {
+  const fetchMessages = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -85,7 +86,7 @@ const ChatDialog = ({ listingId, recipientId }: ChatDialogProps) => {
     if (!error && data) {
       setMessages(data as Message[]);
     }
-  }
+  }, [user, listingId, recipientId]);
 
   const sendMessage = async () => {
     if (!user) {
@@ -151,7 +152,7 @@ const ChatDialog = ({ listingId, recipientId }: ChatDialogProps) => {
         <DialogHeader>
           <DialogTitle>Chat</DialogTitle>
           <DialogDescription>
-            Send a message about this item to the owner
+            Send a message about this item to {recipientName || 'the owner'}
           </DialogDescription>
         </DialogHeader>
         <div className="pt-4 h-[400px] flex flex-col">

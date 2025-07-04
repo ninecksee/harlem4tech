@@ -161,6 +161,7 @@ const ListingDetails = () => {
                 <ChatDialog
                   listingId={listing.id}
                   recipientId={listing.user_id}
+                  recipientName={getUserDisplayName(ownerProfile)}
                 />
               </div>
             )}
