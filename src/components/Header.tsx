@@ -1,7 +1,7 @@
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CircuitBoard, Menu, PlusCircle, Search, User, LogOut } from "lucide-react";
+import { CircuitBoard, Menu, PlusCircle, Search, User, LogOut, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +73,13 @@ const Header = () => {
                 </Link>
               </Button>
               
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/messages">
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="sr-only">Messages</span>
+                </Link>
+              </Button>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -115,9 +122,14 @@ const Header = () => {
                   <Link to="/about">About</Link>
                 </DropdownMenuItem>
                 {user && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/create-listing">Post Item</Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-listing">Post Item</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/messages">Messages</Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
