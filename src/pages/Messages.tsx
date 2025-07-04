@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -23,6 +23,7 @@ interface Conversation {
   listingId: string;
   lastMessage: Message;
   unreadCount: number;
+  otherUserName?: string;
 }
 
 const Messages = () => {
@@ -32,8 +33,31 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [userProfiles, setUserProfiles] = useState<Record<string, string>>({});
 
-  const fetchConversations = async () => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    if (userProfiles[userId]) return userProfiles[userId];
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data?.full_name) {
+        setUserProfiles(prev => ({ ...prev, [userId]: data.full_name }));
+        return data.full_name;
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+    
+    return `User ${userId.slice(0, 8)}`;
+  }, [userProfiles]);
+
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -63,10 +87,20 @@ const Messages = () => {
       }
     });
 
-    setConversations(Array.from(conversationsMap.values()));
-  };
+    const conversationsArray = Array.from(conversationsMap.values());
+    
+    // Fetch user names for all conversations
+    const conversationsWithNames = await Promise.all(
+      conversationsArray.map(async (conversation) => {
+        const userName = await fetchUserProfile(conversation.otherUserId);
+        return { ...conversation, otherUserName: userName };
+      })
+    );
 
-  const fetchMessages = async (otherUserId: string) => {
+    setConversations(conversationsWithNames);
+  }, [user, fetchUserProfile]);
+
+  const fetchMessages = useCallback(async (otherUserId: string) => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -81,7 +115,23 @@ const Messages = () => {
     }
 
     setMessages(data);
-  };
+
+    // Mark messages as read
+    const unreadMessages = data.filter(
+      (message: Message) => message.recipient_id === user.id && !message.read
+    );
+
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map((message: Message) => message.id);
+      await supabase
+        .from('messages')
+        .update({ read: true })
+        .in('id', messageIds);
+      
+      // Refresh conversations to update unread counts
+      fetchConversations();
+    }
+  }, [user, fetchConversations]);
 
   const sendMessage = async () => {
     if (!user || !selectedConversation || !newMessage.trim()) return;
@@ -114,14 +164,53 @@ const Messages = () => {
 
   useEffect(() => {
     fetchConversations();
-  }, [user]);
+  }, [fetchConversations]);
 
   useEffect(() => {
     if (selectedConversation) {
       const [otherUserId] = selectedConversation.split('-');
       fetchMessages(otherUserId);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, fetchMessages]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    if (!user || !selectedConversation) return;
+
+    const [otherUserId, listingId] = selectedConversation.split('-');
+    
+    const channel = supabase
+      .channel('messages-page')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `listing_id=eq.${listingId}`
+        },
+        (payload) => {
+          const message = payload.new as Message;
+          if (
+            (message.sender_id === user.id && message.recipient_id === otherUserId) ||
+            (message.sender_id === otherUserId && message.recipient_id === user.id)
+          ) {
+            setMessages((prev) => [...prev, message]);
+            // Also refresh conversations to update last message
+            fetchConversations();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedConversation, fetchConversations]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,7 +230,7 @@ const Messages = () => {
                       : ''
                   }`}
                 >
-                  <div className="font-medium">User {conversation.otherUserId}</div>
+                  <div className="font-medium">{conversation.otherUserName || `User ${conversation.otherUserId.slice(0, 8)}`}</div>
                   <div className="text-sm text-muted-foreground truncate">
                     {conversation.lastMessage.content}
                   </div>
@@ -177,6 +266,7 @@ const Messages = () => {
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="flex gap-2">
